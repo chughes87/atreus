@@ -15,7 +15,7 @@ key_hole_size = 20;
 
 /* rotation angle; the angle between the halves is twice this
    number */
-angle = 10;
+angle = 15;
 
 /* The radius of screw holes. Holes will be slightly bigger due
    to the cut width. */
@@ -45,7 +45,7 @@ use_notched_holes = true;
 /* Number of rows and columns in the matrix. You need to update
    staggering_offsets if you change n_cols. */
 n_rows = 4;
-n_cols = 5;
+n_cols = 6;
 
 /* Number of thumb keys (per hand), try 1 or 2. */
 n_thumb_keys = 1;
@@ -55,7 +55,7 @@ cable_hole_width = 12;
 
 /* Vertical column staggering offsets. The first element should
    be zero. */
-staggering_offsets = [0, 5, 11, 6, 3];
+staggering_offsets = [0, 5, 11, 6, 3, 2];
 
 /* Whether or not to split the spacer into quarters. */
 quarter_spacer = false;
@@ -113,7 +113,7 @@ module regular_key(position, size) {
 module thumb_key(position, size) {
   /* Create a hole for a 1x1.5 unit thumb key. */
   translate(position) {
-    scale([1, 1.5]) {
+    scale([1, 1]) {
       translate(-position) {
         regular_key(position, size);
       }
@@ -121,14 +121,14 @@ module thumb_key(position, size) {
   }
 }
 
-module column (bottom_position, switch_holes, key_size=key_hole_size) {
+module column (bottom_position, switch_holes, key_size=key_hole_size, rowCount, offset) {
   /* Create a column of keys. */
   translate(bottom_position) {
-    for (i = [0:(n_rows-1)]) {
+    for (i = [0:(rowCount-1)]) {
       if (switch_holes == true) {
-        switch_hole([0, i*column_spacing]);
+        switch_hole([0, (i + offset)*column_spacing]);
       } else {
-        regular_key([0, i*column_spacing], key_size);
+        regular_key([0, (i + offset)*column_spacing], key_size);
       }
     }
   }
@@ -161,7 +161,7 @@ module right_half (switch_holes=true, key_size=key_hole_size) {
      spacer(). */
   x_offset = 0.5 * row_spacing;
   y_offset = 0.5 * column_spacing;
-  thumb_key_offset = y_offset + 0.5 * column_spacing;
+  thumb_key_offset = y_offset - 0.25 * column_spacing;
   rotate_half() {
     add_hand_separation() {
       for (j=[0:(n_thumb_keys-1)]) {
@@ -172,7 +172,15 @@ module right_half (switch_holes=true, key_size=key_hole_size) {
         }
       }
       for (j=[0:(n_cols-1)]) {
-        column([x_offset + (j+n_thumb_keys)*row_spacing, y_offset + staggering_offsets[j]], switch_holes, key_size);
+        if (j < n_cols * n_rows  - 3) {
+            if (j < 3) {
+        column([x_offset + (j+n_thumb_keys)*row_spacing, y_offset + staggering_offsets[j]], switch_holes, key_size, n_rows, 0);
+            }
+            else {
+                
+        column([x_offset + (j+n_thumb_keys)*row_spacing, y_offset + staggering_offsets[j]], switch_holes, key_size, n_rows - 1, 1);
+            }
+        }
       }
     }
   }
@@ -210,10 +218,10 @@ module right_screw_holes(hole_radius) {
   rotate_half() {
     add_hand_separation() {
       screw_hole(hole_radius, washer_radius,
-                 [row_spacing, 0],
+                 [row_spacing, -6],
                  [-nudge, -nudge]);
       screw_hole(hole_radius, washer_radius,
-                 [(n_cols+n_thumb_keys)*row_spacing, staggering_offsets[n_cols-1]],
+                 [(n_cols+n_thumb_keys)*row_spacing, staggering_offsets[n_cols-1] + 15],
                  [nudge, -nudge]);
       screw_hole(hole_radius, washer_radius,
                  back_right,
